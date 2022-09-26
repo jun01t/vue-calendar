@@ -29,6 +29,7 @@
       </DialogSection>
     </v-card-text>
     <v-card-actions class="d-flex justify-end">
+      <v-btn @click="cancel">キャンセル</v-btn>
       <v-btn :disabled="isInvalid" @click="submit">保存</v-btn>
     </v-card-actions>
   </v-card>
@@ -39,13 +40,13 @@ import { mapGetters, mapActions } from 'vuex';
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 
-import DialogSection from './DialogSection';
-import DateForm from './DateForm';
-import TimeForm from './TimeForm';
-import TextForm from './TextForm';
-import ColorForm from './ColorForm';
-import CheckBox from './CheckBox';
-import { isGreaterEndThanStart } from '../functions/datetime';
+import DialogSection from '../layouts/DialogSection';
+import DateForm from '../forms/DateForm';
+import TimeForm from '../forms/TimeForm';
+import TextForm from '../forms/TextForm';
+import ColorForm from '../forms/ColorForm';
+import CheckBox from '../forms/CheckBox';
+import { isGreaterEndThanStart } from '../../functions/datetime';
 
 export default {
   name: 'EventFormDialog',
@@ -83,15 +84,17 @@ export default {
     },
   },
   created() {
+    this.name = this.event.name;
     this.startDate = this.event.startDate;
     this.startTime = this.event.startTime;
     this.endDate = this.event.endDate;
     this.endTime = this.event.endTime;
+    this.description = this.event.description;
     this.color = this.event.color;
     this.allDay = !this.event.timed;
   },
   methods: {
-    ...mapActions('events', ['setEvent', 'setEditMode', 'createEvent']),
+    ...mapActions('events', ['setEvent', 'setEditMode', 'createEvent', 'updateEvent']),
     closeDialog() {
       this.setEditMode(false);
       this.setEvent(null);
@@ -101,6 +104,7 @@ export default {
         return;
       }
       const params = {
+        ...this.event,
         name: this.name,
         start: `${this.startDate} ${this.startTime || ''}`,
         end: `${this.endDate} ${this.endTime || ''}`,
@@ -108,8 +112,18 @@ export default {
         color: this.color,
         timed: !this.allDay,
       };
-      this.createEvent(params);
+      if (params.id) {
+        this.updateEvent(params);
+      } else {
+        this.createEvent(params);
+      }
       this.closeDialog();
+    },
+    cancel() {
+      this.setEditMode(false);
+      if (!this.event.id) {
+        this.setEvent(null);
+      }
     },
   },
 };
